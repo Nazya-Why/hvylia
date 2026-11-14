@@ -374,3 +374,4 @@ body.loading .spin{opacity:1;animation:spin .8s linear infinite}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 .ph{width:100%;height:100%;display:grid;place-items:center;color:var(--dim);background:var(--card2)}
 .ph .ic{width:40%;height:40%}
+.sh-form .sh-btns button{color:var(--text)}.sh-form .sh-btns .pri{color:#fff}

@@ -6,6 +6,10 @@
 from __future__ import annotations
 
 import asyncio
+import ipaddress
+import secrets
+import subprocess
+import sys
 import json
 import os
 import re
@@ -20,6 +24,7 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 import yt_dlp
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -35,6 +40,14 @@ CACHE_LIMIT = int(os.environ.get("CACHE_MB", "2000")) * 1024 * 1024
 CHUNK = 8 * 1024 * 1024  # googlevideo віддає максимум ~10 МБ за запит
 LOCATION = os.environ.get("YTM_LOCATION", "UA")
 VID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
+PAGES_URL = os.environ.get("PAGES_URL", "https://nazya-why.github.io/hvylia/")
+PAGES_ORIGIN = "{0.scheme}://{0.netloc}".format(urlparse(PAGES_URL))
+
+# Ключ доступу: потрібен для всіх запитів, що приходять не з локальної мережі (через тунель).
+KEY_FILE = DATA / "key.txt"
+if not KEY_FILE.exists():
+    KEY_FILE.write_text(secrets.token_urlsafe(18), "utf-8")
+KEY = KEY_FILE.read_text("utf-8").strip()
 
 api_pool = ThreadPoolExecutor(max_workers=8, thread_name_prefix="ytm")
 hi_pool = ThreadPoolExecutor(max_workers=3, thread_name_prefix="dl-hi")  # те, що грає зараз
@@ -227,6 +240,35 @@ def compact(xs):
 # ─────────────────────────────── API: каталог ───────────────────────────────
 app = FastAPI(title="Хвиля")
 app.add_middleware(GZipMiddleware, minimum_size=800)
+
+
+def _is_local(request: Request) -> bool:
+    if any(h in request.headers for h in ("cf-connecting-ip", "x-forwarded-for", "cf-ray")):
+        return False  # прийшло через тунель
+    try:
+        ip = ipaddress.ip_address(request.client.host if request.client else "0.0.0.0")
+        return ip.is_private or ip.is_loopback
+    except ValueError:
+        return False
+
+
+@app.middleware("http")
+async def guard(request: Request, call_next):
+    if request.url.path.startswith("/api/") and request.method != "OPTIONS" and not _is_local(request):
+        k = request.query_params.get("k") or request.headers.get("x-key")
+        if not k or not secrets.compare_digest(k, KEY):
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+    return await call_next(request)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[PAGES_ORIGIN, "http://localhost:8000", "http://127.0.0.1:8000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["Content-Range", "Accept-Ranges", "Content-Length"],
+    max_age=86400,
+)
 
 
 def J(data, max_age=300):
@@ -745,6 +787,86 @@ class NoCacheStatic(StaticFiles):
 app.mount("/", NoCacheStatic(directory=WEB, html=True), name="web")
 
 
+# ─────────────────────────────── тунель + gist ───────────────────────────────
+GIST_FILE = DATA / "gist.txt"
+
+
+def _gh(*args, input_text=None):
+    return subprocess.run(["gh", *args], input=input_text, capture_output=True, text=True, encoding="utf-8", timeout=60)
+
+
+def publish_url(url: str) -> str | None:
+    """Записує поточну адресу тунелю в секретний gist, звідки її читає сайт на GitHub Pages."""
+    if not shutil.which("gh"):
+        print("  ! GitHub CLI (gh) не знайдено — адресу не опубліковано")
+        return None
+    body = json.dumps({"url": url, "at": int(time.time())})
+    gid = GIST_FILE.read_text("utf-8").strip() if GIST_FILE.exists() else ""
+    if gid:
+        r = _gh("api", "-X", "PATCH", f"gists/{gid}", "--input", "-",
+                input_text=json.dumps({"files": {"hvylia.json": {"content": body}}}))
+        if r.returncode == 0:
+            return gid
+    tmp = DATA / "hvylia.json"
+    tmp.write_text(body, "utf-8")
+    r = _gh("gist", "create", str(tmp), "--desc", "hvylia server address")
+    tmp.unlink(missing_ok=True)
+    if r.returncode != 0:
+        print("  ! Не вдалося створити gist:", r.stderr.strip()[:200])
+        return None
+    gid = r.stdout.strip().rstrip("/").split("/")[-1]
+    GIST_FILE.write_text(gid, "utf-8")
+    return gid
+
+
+def find_cloudflared():
+    cands = [shutil.which("cloudflared"), str(ROOT / "cloudflared.exe")]
+    for base in (os.environ.get("ProgramFiles(x86)"), os.environ.get("ProgramFiles")):
+        if base:
+            cands.append(str(Path(base) / "cloudflared" / "cloudflared.exe"))
+    local = os.environ.get("LOCALAPPDATA")
+    if local:
+        cands += [str(p) for p in (Path(local) / "Microsoft" / "WinGet" / "Packages").glob("Cloudflare.cloudflared*/*.exe")]
+        cands.append(str(Path(local) / "Microsoft" / "WinGet" / "Links" / "cloudflared.exe"))
+    return next((c for c in cands if c and Path(c).exists()), None)
+
+
+def start_tunnel(port: int):
+    exe = find_cloudflared()
+    if not exe:
+        return None, None
+    proc = subprocess.Popen([exe, "tunnel", "--no-autoupdate", "--url", f"http://localhost:{port}"],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
+    import atexit
+    atexit.register(proc.terminate)
+    found: list[str] = []
+    ev = threading.Event()
+
+    def reader():
+        for line in proc.stdout:
+            m = re.search(r"https://(?!api\.)[a-z0-9]+(?:-[a-z0-9]+)+\.trycloudflare\.com", line)
+            if m and not found:
+                found.append(m.group(0))
+                ev.set()
+
+    threading.Thread(target=reader, daemon=True).start()
+    ev.wait(45)
+    if not found:
+        proc.terminate()
+        return None, None
+    return found[0], proc
+
+
+def show_qr(text: str):
+    try:
+        import qrcode
+        q = qrcode.QRCode(border=1)
+        q.add_data(text)
+        q.print_ascii(invert=True)
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
     import socket
 
@@ -758,5 +880,39 @@ if __name__ == "__main__":
         s.close()
     except OSError:
         ip = "127.0.0.1"
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
+    except Exception:
+        pass
     print(f"\n  Хвиля запущена:\n   • на цьому ПК:  http://localhost:{port}\n   • з телефону (та сама Wi-Fi):  http://{ip}:{port}\n")
+
+    def tunnel_job():
+        if os.environ.get("TUNNEL", "1") == "0":
+            return
+        if not find_cloudflared():
+            print("  ! cloudflared не встановлено — доступ лише з домашньої Wi-Fi")
+            return
+        shown = warned = False
+        while True:
+            url, proc = start_tunnel(port)
+            if not url:
+                if not warned:
+                    print("  ! Не вдалося відкрити тунель (Cloudflare не відповідає). Пробую знову щохвилини…")
+                    warned = True
+                time.sleep(60)
+                continue
+            warned = False
+            gid = publish_url(url)
+            print(f"  • тунель: {url}")
+            if gid and not shown:
+                shown = True
+                link = f"{PAGES_URL}#/setup?g={gid}&k={KEY}"
+                print(f"\n  Посилання для телефону (відкрий один раз, далі все автоматично):\n  {link}\n")
+                show_qr(link)
+                print("  Не показуй це посилання іншим — у ньому ключ доступу.\n")
+            proc.wait()
+            print("  ! Тунель перервався — перепідключаю…")
+            time.sleep(5)
+
+    threading.Thread(target=tunnel_job, daemon=True).start()
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")

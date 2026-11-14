@@ -1,3 +1,4 @@
+import { apiUrl } from './config.js';
 // Аудіо-рушій: черга, перемішування, повтор, автопідбір, попереднє завантаження,
 // Media Session (керування з екрана блокування / навушників).
 import { api } from './api.js';
@@ -53,8 +54,8 @@ function serverPrefetch() {
   const pick = (a, b) => P.queue.slice(a, b).map(t => t.id).filter(id => !(sentServer.get(id) > now - 20 * 60e3));
   const dl = pick(P.index + 1, P.index + 4), rs = pick(P.index + 4, P.index + 7);
   [...dl, ...rs].forEach(id => sentServer.set(id, now));
-  if (dl.length) fetch(`/api/prefetch?ids=${dl.join(',')}`, { method: 'POST' }).catch(() => {});
-  if (rs.length) fetch(`/api/prefetch?ids=${rs.join(',')}&mode=resolve`, { method: 'POST' }).catch(() => {});
+  if (dl.length) fetch(apiUrl(`/prefetch?ids=${dl.join(',')}`), { method: 'POST' }).catch(() => {});
+  if (rs.length) fetch(apiUrl(`/prefetch?ids=${rs.join(',')}&mode=resolve`), { method: 'POST' }).catch(() => {});
   if (sentServer.size > 500) sentServer.clear();
 }
 let nbT = 0, nbRun = 0;
@@ -85,7 +86,7 @@ async function neighbors() {
     if (ex) { await ex.p; continue; }
     const ctrl = new AbortController();
     const e = { ctrl, url: null };
-    e.p = fetch(`/api/stream/${t.id}?full=1`, { signal: ctrl.signal })
+    e.p = fetch(apiUrl(`/stream/${t.id}?full=1`), { signal: ctrl.signal })
       .then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
       .then(b => { if (b.size > 20000) e.url = URL.createObjectURL(b); else blobs.delete(t.id); })
       .catch(() => blobs.delete(t.id));
@@ -93,7 +94,7 @@ async function neighbors() {
     await e.p;
   }
 }
-const srcFor = id => blobs.get(id)?.url || `/api/stream/${id}`;
+const srcFor = id => blobs.get(id)?.url || apiUrl(`/stream/${id}`);
 
 /* ─────────── завантаження треку ─────────── */
 function load(t, autoplay = true, at = 0) {
@@ -262,9 +263,9 @@ function onError(stalled = false) {
   const at = audio.currentTime || 0;
   if (b && audio.src === b.url) {
     blobs.delete(t.id); URL.revokeObjectURL(b.url);
-    audio.src = `/api/stream/${t.id}`;
+    audio.src = apiUrl(`/stream/${t.id}`);
   } else if (retry++ < 1) {
-    audio.src = `/api/stream/${t.id}?r=${Date.now()}`;
+    audio.src = apiUrl(`/stream/${t.id}?r=${Date.now()}`);
   } else {
     emit('error', t);
     P.loading = false;

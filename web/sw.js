@@ -1,6 +1,6 @@
 // Service worker: миттєвий запуск оболонки та кеш обкладинок. Аудіо не кешується тут (його кешує сервер і плеєр).
-const V = 'hv-v1';
-const SHELL = ['./', 'index.html', 'app.css', 'js/app.js', 'js/player.js', 'js/playerui.js', 'js/ui.js', 'js/store.js', 'js/api.js', 'manifest.webmanifest', 'icons/icon-192.png'];
+const V = 'hv-v2';
+const SHELL = ['./', 'index.html', 'app.css', 'js/app.js', 'js/config.js', 'js/player.js', 'js/playerui.js', 'js/ui.js', 'js/store.js', 'js/api.js', 'manifest.webmanifest', 'icons/icon-192.png'];
 const IMG = 'hv-img';
 
 self.addEventListener('install', e => {

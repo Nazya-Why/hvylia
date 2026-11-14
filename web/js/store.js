@@ -1,3 +1,4 @@
+import { apiUrl } from './config.js';
 // Бібліотека користувача: лайки, плейлисти, історія. Зберігається локально + синхронізується з сервером.
 const KEY = 'hv.lib.v1', SKEY = 'hv.settings.v1';
 const blank = () => ({ likes: [], playlists: [], albums: [], savedPlaylists: [], artists: [], history: [], searches: [], contexts: [], updatedAt: 0 });
@@ -27,7 +28,7 @@ let syncState = 'idle';
 export const getSync = () => syncState;
 async function push() {
   try {
-    const r = await fetch('/api/library', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(lib) });
+    const r = await fetch(apiUrl('/library'), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(lib) });
     const j = await r.json();
     syncState = 'ok';
     if (j.stale) await pull();
@@ -36,7 +37,7 @@ async function push() {
 export async function pull() {
   if (!settings.sync) return;
   try {
-    const remote = await (await fetch('/api/library', { cache: 'no-store' })).json();
+    const remote = await (await fetch(apiUrl('/library'), { cache: 'no-store' })).json();
     syncState = 'ok';
     if ((remote.updatedAt || 0) > lib.updatedAt) {
       Object.keys(lib).forEach(k => delete lib[k]);

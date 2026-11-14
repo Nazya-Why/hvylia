@@ -4,6 +4,7 @@ import * as store from './store.js';
 import { api, peek, q } from './api.js';
 import * as ui from './ui.js';
 import * as pui from './playerui.js';
+import * as config from './config.js';
 
 const { $, $$, esc, icon, img, sz, row, card, itemRow, reg, getList, sheet, promptSheet, toast, artistsText, fmtLong, tracksWord, dominant, haptic, trackHead, skelRows, skelCards } = ui;
 const lib = store.lib;
@@ -43,7 +44,8 @@ export function go(href) {
 function back() { if (history.length > 1) history.back(); else go('#/'); }
 
 window.addEventListener('popstate', () => { ui.handlePop(); });
-window.addEventListener('hashchange', () => render());
+window.addEventListener('hashchange', () => { if (booted) render(); });
+let booted = false;
 
 function render() {
   const r = parse();
@@ -658,6 +660,7 @@ function settingsPage(el) {
       <button class="set-row" data-act="import">${icon('ul')}<div><b>Імпорт бібліотеки</b><small>Відновити з файлу</small></div></button>
       <button class="set-row" data-act="yt">${icon('link')}<div><b>Імпорт плейлиста YouTube</b><small>За посиланням</small></div></button>
     </div>
+    ${config.remote ? `<div class="set-group"><button class="set-row" data-act="server">${icon('link')}<div><b>Сервер</b><small>${esc(config.getCfg().base || 'не підключено')}</small></div></button></div>` : ''}
     <div class="set-group">
       <button class="set-row" data-act="hist">${icon('clock')}<div><b>Очистити історію</b><small>${tracksWord(lib.history.length)}</small></div></button>
       <button class="set-row" data-act="srch">${icon('search')}<div><b>Очистити історію пошуку</b></div></button>
@@ -677,6 +680,7 @@ function settingsPage(el) {
     }
     if (a === 'import') importFile();
     if (a === 'yt') importYT();
+    if (a === 'server') { promptSheet({ title: 'Нове посилання налаштування', placeholder: 'https://…#/setup?g=…&k=…', ok: 'Підключити' }).then(v => { if (v && config.setManual(v)) location.reload(); }); }
     if (a === 'hist') { store.clearHistory(); toast('Історію очищено'); }
     if (a === 'srch') { lib.searches = []; store.commit('searches'); toast('Історію пошуку очищено'); }
   });
@@ -691,10 +695,34 @@ function importFile() {
   inp.click();
 }
 
-/* ═════════════════════════ старт ═════════════════════════ */
-pui.init();
-render();
-store.pull();
+/* ═════════════════════════ підключення до сервера ═════════════════════════ */
+function connectScreen(state) {
+  $('#tabs').hidden = true;
+  view.innerHTML = `<div class="page"><div class="glow"></div>
+    <div class="empty" style="padding-top:calc(var(--st) + 16vh)">
+      ${icon(state === 'offline' ? 'sync' : 'link')}
+      <b>${state === 'offline' ? 'Сервер не відповідає' : 'Підключи свій сервер'}</b>
+      ${state === 'offline'
+        ? 'Перевір, що на ПК запущено <b style="display:inline;font-size:inherit">start.bat</b> і є інтернет.'
+        : 'Запусти <b style="display:inline;font-size:inherit">start.bat</b> на ПК і відскануй QR-код з його вікна камерою телефону — або встав посилання налаштування сюди:'}
+      <form class="sh-form" style="margin-top:18px;padding:0" data-f>
+        <input name="v" placeholder="https://…/hvylia/#/setup?g=…&k=…" autocomplete="off">
+        <div class="sh-btns"><button type="button" data-retry>Спробувати ще</button><button class="pri" type="submit">Підключити</button></div>
+      </form>
+    </div></div>`;
+  const f = view.querySelector('[data-f]');
+  f.onsubmit = e => { e.preventDefault(); if (!config.setManual(f.v.value.trim())) { toast('Це не схоже на посилання налаштування'); return; } boot(); };
+  f.querySelector('[data-retry]').onclick = () => boot();
+}
+async function boot() {
+  const st = await config.connect();
+  if (st !== 'ok') { connectScreen(st); return; }
+  $('#tabs').hidden = false;
+  if (!booted) { booted = true; pui.init(); }
+  render();
+  store.pull();
+}
+boot();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }

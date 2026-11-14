@@ -1,3 +1,4 @@
+import { apiUrl } from './config.js';
 // Спільні UI-утиліти: іконки, шаблони рядків/карток, шторки, тости, колір обкладинки.
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -235,7 +236,7 @@ export function dominant(u) {
       } catch { res(null); }
     };
     im.onerror = () => res(null);
-    im.src = '/api/img?u=' + encodeURIComponent(key);
+    im.src = apiUrl('/img?u=' + encodeURIComponent(key));
   });
   colors.set(key, p);
   return p;

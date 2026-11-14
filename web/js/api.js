@@ -1,3 +1,4 @@
+import { apiUrl } from './config.js';
 // Тонкий клієнт до бекенду з кешем у пам'яті та локальним «stale» кешем для миттєвого старту.
 const mem = new Map();
 const LS = 'hv.c:';
@@ -13,7 +14,7 @@ export function api(path, { ttl = 10 * 60e3, persist = false } = {}) {
   const hit = mem.get(path);
   if (hit?.v && Date.now() - hit.t < ttl) return Promise.resolve(hit.v);
   if (hit?.p) return hit.p;
-  const p = fetch('/api' + path).then(r => {
+  const p = fetch(apiUrl(path)).then(r => {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
   }).then(v => {
