@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#09090d">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Хвиля">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="preconnect" href="https://yt3.googleusercontent.com" crossorigin>
+<link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin>
+<link rel="preconnect" href="https://i.ytimg.com" crossorigin>
+<link rel="modulepreload" href="js/app.js">
+<link rel="modulepreload" href="js/player.js">
+<link rel="modulepreload" href="js/ui.js">
+<link rel="modulepreload" href="js/store.js">
+<link rel="modulepreload" href="js/api.js">
+<link rel="modulepreload" href="js/playerui.js">
+<link rel="stylesheet" href="app.css">
+<title>Хвиля</title>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M12 5.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></symbol>
+  <symbol id="i-home-f" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></symbol>
+  <symbol id="i-lib" viewBox="0 0 24 24"><path d="M20 4v12H8V4h12m0-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7.5 13a2.5 2.5 0 002.5-2.5V7h3V5h-4v5.51c-.42-.32-.93-.51-1.5-.51a2.5 2.5 0 000 5zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/></symbol>
+  <symbol id="i-lib-f" viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 5h-3v5.5a2.5 2.5 0 11-2.5-2.5c.57 0 1.08.19 1.5.51V5h4v2zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.14v13.72c0 .79.87 1.27 1.54.84l10.4-6.86a1 1 0 000-1.68L9.54 4.3A1 1 0 008 5.14z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1.3"/><rect x="14" y="4.5" width="4" height="15" rx="1.3"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M5 6.27v11.46c0 .8.9 1.28 1.56.82l8.2-5.73a1 1 0 000-1.64l-8.2-5.73A1 1 0 005 6.27z"/><rect x="16.5" y="5.5" width="2.6" height="13" rx="1.1"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 6.27v11.46c0 .8-.9 1.28-1.56.82l-8.2-5.73a1 1 0 010-1.64l8.2-5.73A1 1 0 0119 6.27z"/><rect x="4.9" y="5.5" width="2.6" height="13" rx="1.1"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></symbol>
+  <symbol id="i-repeat1" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v4H13z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></symbol>
+  <symbol id="i-heart-f" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><path d="M12 8a2 2 0 100-4 2 2 0 000 4zm0 2a2 2 0 100 4 2 2 0 000-4zm0 6a2 2 0 100 4 2 2 0 000-4z"/></symbol>
+  <symbol id="i-more-h" viewBox="0 0 24 24"><path d="M6 10a2 2 0 100 4 2 2 0 000-4zm12 0a2 2 0 100 4 2 2 0 000-4zm-6 0a2 2 0 100 4 2 2 0 000-4z"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></symbol>
+  <symbol id="i-queue" viewBox="0 0 24 24"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18A3 3 0 1019 17V8h3V6h-5z"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12.34 2.02C6.59 1.82 2 6.42 2 12c0 5.52 4.48 10 10 10 3.71 0 6.93-2.02 8.66-5.02-7.51-.25-12.09-8.43-8.32-14.96z"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11A2.99 2.99 0 0021 5a3 3 0 10-5.91.7L8.04 9.81A2.99 2.99 0 003 12a3 3 0 005.04 2.19l7.12 4.16c-.05.21-.08.43-.08.65A2.92 2.92 0 1018 16.08z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
+  <symbol id="i-drag" viewBox="0 0 24 24"><path d="M20 9H4v2h16V9zM4 15h16v-2H4v2z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
+  <symbol id="i-radio" viewBox="0 0 24 24"><path d="M7.76 16.24A5.98 5.98 0 016 12c0-1.66.67-3.16 1.76-4.24l1.42 1.42A3.96 3.96 0 008 12c0 1.1.45 2.1 1.17 2.83l-1.41 1.41zm8.48 0A5.98 5.98 0 0018 12c0-1.66-.67-3.16-1.76-4.24l-1.42 1.42C15.55 9.9 16 10.9 16 12c0 1.1-.45 2.1-1.17 2.83l1.41 1.41zM12 10a2 2 0 100 4 2 2 0 000-4zm8 2c0 2.21-.9 4.21-2.35 5.65l1.42 1.42A9.97 9.97 0 0022 12c0-2.76-1.12-5.26-2.93-7.07l-1.42 1.42A7.94 7.94 0 0120 12zM6.35 6.35L4.93 4.93A9.97 9.97 0 002 12c0 2.76 1.12 5.26 2.93 7.07l1.42-1.42A7.94 7.94 0 014 12c0-2.21.9-4.21 2.35-5.65z"/></symbol>
+  <symbol id="i-album" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5a4.5 4.5 0 110-9 4.5 4.5 0 010 9zm0-5.5a1 1 0 100 2 1 1 0 000-2z"/></symbol>
+  <symbol id="i-person" viewBox="0 0 24 24"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></symbol>
+  <symbol id="i-pl-add" viewBox="0 0 24 24"><path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z"/></symbol>
+  <symbol id="i-pl-next" viewBox="0 0 24 24"><path d="M3 10h12v2H3zm0-4h12v2H3zm0 8h8v2H3zm11 0v6l5-3z"/></symbol>
+  <symbol id="i-q-add" viewBox="0 0 24 24"><path d="M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zm13-1v-3h-2v3h-3v2h3v3h2v-3h3v-2z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87a.48.48 0 00.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 00-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 110-7.2 3.6 3.6 0 010 7.2z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7a6.97 6.97 0 01-4.94-2.06l-1.42 1.42A8.95 8.95 0 0013 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></symbol>
+  <symbol id="i-ul" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 000 10h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 000-10z"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z"/></symbol>
+  <symbol id="i-sync" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></symbol>
+</svg>
+
+<div id="app">
+  <main id="view" class="view"></main>
+
+  <div id="mini" class="mini" hidden>
+    <div class="mini-body">
+      <div class="mini-art"><img alt="" id="mini-img"></div>
+      <div class="mini-txt"><div class="mini-t" id="mini-t"></div><div class="mini-s" id="mini-s"></div></div>
+      <button class="mini-btn" data-mini="like" aria-label="Подобається"><svg class="ic"><use href="#i-heart"/></svg></button>
+      <button class="mini-btn mini-pp" data-mini="toggle" aria-label="Пауза/Відтворення"><svg class="ic"><use href="#i-play"/></svg></button>
+    </div>
+    <div class="mini-prog"><i id="mini-prog"></i></div>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <a class="tab" href="#/" data-tab="home"><svg class="ic off"><use href="#i-home"/></svg><svg class="ic onn"><use href="#i-home-f"/></svg><span>Головна</span></a>
+    <a class="tab" href="#/search" data-tab="search"><svg class="ic off"><use href="#i-search"/></svg><svg class="ic onn"><use href="#i-search"/></svg><span>Пошук</span></a>
+    <a class="tab" href="#/library" data-tab="library"><svg class="ic off"><use href="#i-lib"/></svg><svg class="ic onn"><use href="#i-lib-f"/></svg><span>Бібліотека</span></a>
+  </nav>
+</div>
+
+<section id="player" class="player" aria-hidden="true">
+  <div class="pl-bg"><img alt="" id="pl-bgimg"></div>
+  <div class="pl-inner">
+    <header class="pl-head" id="pl-head">
+      <button class="pl-hbtn" data-p="close" aria-label="Згорнути"><svg class="ic"><use href="#i-down"/></svg></button>
+      <div class="pl-ctx"><small>ВІДТВОРЮЄТЬСЯ З</small><b id="pl-ctx">—</b></div>
+      <button class="pl-hbtn" data-p="more" aria-label="Більше"><svg class="ic"><use href="#i-more"/></svg></button>
+    </header>
+    <div class="pl-stage" id="pl-stage">
+      <div class="pl-art" id="pl-art"><img alt="" id="pl-img"></div>
+    </div>
+    <div class="pl-meta">
+      <div class="pl-titles">
+        <div class="pl-title"><span id="pl-title"></span></div>
+        <a class="pl-artist" id="pl-artist"></a>
+      </div>
+      <button class="pl-like" data-p="like" aria-label="Подобається"><svg class="ic"><use href="#i-heart"/></svg></button>
+    </div>
+    <div class="pl-seek">
+      <div class="seek" id="seek"><div class="seek-track"><i class="seek-buf" id="seek-buf"></i><i class="seek-fill" id="seek-fill"></i></div><i class="seek-thumb" id="seek-thumb"></i></div>
+      <div class="pl-times"><span id="t-cur">0:00</span><span id="t-dur">0:00</span></div>
+    </div>
+    <div class="pl-ctrls">
+      <button class="pc-btn" data-p="shuffle" aria-label="Перемішати"><svg class="ic"><use href="#i-shuffle"/></svg></button>
+      <button class="pc-btn pc-big" data-p="prev" aria-label="Попередній"><svg class="ic"><use href="#i-prev"/></svg></button>
+      <button class="pc-play" data-p="toggle" aria-label="Відтворення"><svg class="ic"><use href="#i-play"/></svg><span class="spin"></span></button>
+      <button class="pc-btn pc-big" data-p="next" aria-label="Наступний"><svg class="ic"><use href="#i-next"/></svg></button>
+      <button class="pc-btn" data-p="repeat" aria-label="Повтор"><svg class="ic"><use href="#i-repeat"/></svg></button>
+    </div>
+    <div class="pl-foot">
+      <button class="pf-btn" data-p="lyrics"><svg class="ic"><use href="#i-mic"/></svg><span>Текст</span></button>
+      <button class="pf-btn" data-p="sleep"><svg class="ic"><use href="#i-moon"/></svg><span id="sleep-l">Таймер</span></button>
+      <button class="pf-btn" data-p="share"><svg class="ic"><use href="#i-share"/></svg><span>Поділитися</span></button>
+      <button class="pf-btn" data-p="queue"><svg class="ic"><use href="#i-queue"/></svg><span>Черга</span></button>
+    </div>
+  </div>
+
+  <div class="panel" id="lyr" aria-hidden="true">
+    <header class="pn-head"><button class="pl-hbtn" data-p="panel-close"><svg class="ic"><use href="#i-down"/></svg></button><div class="pn-t"><b>Текст пісні</b><small id="lyr-sub"></small></div><span class="pl-hbtn"></span></header>
+    <div class="pn-body lyr-body" id="lyr-body"></div>
+  </div>
+  <div class="panel" id="que" aria-hidden="true">
+    <header class="pn-head"><button class="pl-hbtn" data-p="panel-close"><svg class="ic"><use href="#i-down"/></svg></button><div class="pn-t"><b>Черга</b><small id="que-sub"></small></div><span class="pl-hbtn"></span></header>
+    <div class="pn-body" id="que-body"></div>
+    <footer class="que-foot">
+      <button class="qf-btn" data-p="shuffle"><svg class="ic"><use href="#i-shuffle"/></svg></button>
+      <button class="qf-btn" data-p="repeat"><svg class="ic"><use href="#i-repeat"/></svg></button>
+      <button class="qf-btn qf-auto" data-p="autoplay"><svg class="ic"><use href="#i-radio"/></svg><span>Автопідбір</span></button>
+    </footer>
+  </div>
+</section>
+
+<div id="toast" class="toast" role="status"></div>
+<audio id="audio" preload="auto" playsinline></audio>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
