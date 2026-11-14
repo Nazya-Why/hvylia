@@ -242,14 +242,26 @@ app = FastAPI(title="Хвиля")
 app.add_middleware(GZipMiddleware, minimum_size=800)
 
 
-def _is_local(request: Request) -> bool:
-    if any(h in request.headers for h in ("cf-connecting-ip", "x-forwarded-for", "cf-ray")):
-        return False  # прийшло через тунель
+def _private(host: str) -> bool:
+    if host in ("localhost",):
+        return True
     try:
-        ip = ipaddress.ip_address(request.client.host if request.client else "0.0.0.0")
+        ip = ipaddress.ip_address(host.strip("[]"))
         return ip.is_private or ip.is_loopback
     except ValueError:
         return False
+
+
+def _is_local(request: Request) -> bool:
+    """Локальний = з ПК або домашньої мережі. Тунелі (Cloudflare, localhost.run) приходять
+    з 127.0.0.1, тому дивимось і на заголовки проксі, і на Host: у тунелі він публічний."""
+    h = request.headers
+    if any(k in h for k in ("cf-connecting-ip", "x-forwarded-for", "x-forwarded-host", "x-real-ip", "forwarded", "cf-ray")):
+        return False
+    host = (h.get("host") or "").rsplit(":", 1)[0] if not (h.get("host") or "").startswith("[") else h.get("host", "").split("]")[0] + "]"
+    if not _private(host):
+        return False
+    return _private(request.client.host if request.client else "0.0.0.0")
 
 
 @app.middleware("http")
@@ -831,30 +843,67 @@ def find_cloudflared():
     return next((c for c in cands if c and Path(c).exists()), None)
 
 
-def start_tunnel(port: int):
-    exe = find_cloudflared()
-    if not exe:
-        return None, None
-    proc = subprocess.Popen([exe, "tunnel", "--no-autoupdate", "--url", f"http://localhost:{port}"],
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
+def _run_tunnel(cmd: list[str], parse, on_url, wait: int):
+    """Запускає процес тунелю; parse(line) -> url | None. Кожну нову адресу передає в on_url
+    (localhost.run періодично змінює домен). Повертає процес або None, якщо адреси не дочекались."""
+    # stdin лишаємо відкритим: інакше SSH закриває сесію і тунель віддає «no tunnel»
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, encoding="utf-8", errors="replace")  # спільна консоль: закриєш вікно — закриється й тунель
     import atexit
     atexit.register(proc.terminate)
-    found: list[str] = []
     ev = threading.Event()
 
     def reader():
+        last = None
         for line in proc.stdout:
-            m = re.search(r"https://(?!api\.)[a-z0-9]+(?:-[a-z0-9]+)+\.trycloudflare\.com", line)
-            if m and not found:
-                found.append(m.group(0))
+            url = parse(line)
+            if url and url != last:
+                last = url
                 ev.set()
+                try:
+                    on_url(url)
+                except Exception as e:
+                    print("  ! помилка публікації адреси:", e)
 
     threading.Thread(target=reader, daemon=True).start()
-    ev.wait(45)
-    if not found:
+    if not ev.wait(wait):
         proc.terminate()
-        return None, None
-    return found[0], proc
+        return None
+    return proc
+
+
+def _parse_cf(line: str):
+    m = re.search(r"https://(?!api\.)[a-z0-9]+(?:-[a-z0-9]+)+\.trycloudflare\.com", line)
+    return m.group(0) if m else None
+
+
+def _parse_lhr(line: str):
+    try:
+        ev = json.loads(line)
+    except ValueError:
+        return None
+    if str(ev.get("type", "")).endswith("tunnel.registered"):
+        addr = (ev.get("data") or {}).get("address")
+        return f"https://{addr}" if addr else None
+    return None
+
+
+def start_tunnel(port: int, on_url):
+    """Спершу Cloudflare (якщо встановлено), інакше / при збої — localhost.run через SSH."""
+    order = os.environ.get("TUNNEL_ORDER", "cloudflare,lhr").split(",")
+    for kind in order:
+        if kind == "cloudflare" and (exe := find_cloudflared()):
+            proc = _run_tunnel([exe, "tunnel", "--no-autoupdate", "--url", f"http://127.0.0.1:{port}"], _parse_cf, on_url, 25)
+            if proc:
+                return proc
+        if kind == "lhr" and (ssh := shutil.which("ssh")):
+            proc = _run_tunnel([ssh, "-T", "-o", "StrictHostKeyChecking=accept-new", "-o", "ServerAliveInterval=30",
+                                "-o", "ExitOnForwardFailure=yes", "-o", "BatchMode=yes",
+                                "-R", f"80:127.0.0.1:{port}", "nokey@localhost.run", "--", "--output", "json"],
+                               _parse_lhr, on_url, 30)
+            if proc:
+                return proc
+    return None
 
 
 def show_qr(text: str):
@@ -889,27 +938,31 @@ if __name__ == "__main__":
     def tunnel_job():
         if os.environ.get("TUNNEL", "1") == "0":
             return
-        if not find_cloudflared():
-            print("  ! cloudflared не встановлено — доступ лише з домашньої Wi-Fi")
-            return
-        shown = warned = False
-        while True:
-            url, proc = start_tunnel(port)
-            if not url:
-                if not warned:
-                    print("  ! Не вдалося відкрити тунель (Cloudflare не відповідає). Пробую знову щохвилини…")
-                    warned = True
-                time.sleep(60)
-                continue
-            warned = False
+        shown = False
+
+        def on_url(url):
+            nonlocal shown
             gid = publish_url(url)
             print(f"  • тунель: {url}")
+            if "lhr.life" in url:
+                print("    (безкоштовний localhost.run обмежує швидкість ~5 КБ/с — музика може переривати)")
             if gid and not shown:
                 shown = True
                 link = f"{PAGES_URL}#/setup?g={gid}&k={KEY}"
                 print(f"\n  Посилання для телефону (відкрий один раз, далі все автоматично):\n  {link}\n")
                 show_qr(link)
                 print("  Не показуй це посилання іншим — у ньому ключ доступу.\n")
+
+        warned = False
+        while True:
+            proc = start_tunnel(port, on_url)
+            if not proc:
+                if not warned:
+                    print("  ! Не вдалося відкрити тунель. Пробую знову щохвилини (поки що — лише домашня Wi-Fi)…")
+                    warned = True
+                time.sleep(60)
+                continue
+            warned = False
             proc.wait()
             print("  ! Тунель перервався — перепідключаю…")
             time.sleep(5)
